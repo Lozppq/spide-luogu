@@ -174,7 +174,7 @@ class window:
             if not os.path.exists(key):
                 os.makedirs(key)
 
-            with open(key + '/' + object[0] + ' ' + object[1] + '.md', "w", encoding='utf-8') as f:
+            with open(key + '/' + object[0] + '_' + object[1] + '.md', "w", encoding='utf-8') as f:
                 f.write(markdownify(html))
 
             # 开始准备获取题解链接
@@ -189,7 +189,7 @@ class window:
             if adjust.text[0] != '0':
                 element = self.driver.find_element(By.XPATH,"/html/body/div/div[2]/main/div/section[2]/div/div[2]/div/div[1]/div/div[1]")
                 html = element.get_attribute('innerHTML')
-                with open(key + '/' + object[0] + ' ' + object[1] + '_题解' + '.md', "w", encoding='utf-8') as f:
+                with open(key + '/' + object[0] + '_' + object[1] + '_题解' + '.md', "w", encoding='utf-8') as f:
                     f.write(markdownify(html))
 
         self.label1.destroy()
