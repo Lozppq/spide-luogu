@@ -124,6 +124,7 @@ class window:
 
         #保存题目链接列表
         self.arr = []
+        self.Problem_object = []
         List_key_url = self.driver.current_url
         # 对题目进行保存
         for problem_row in problems_row:
@@ -146,19 +147,19 @@ class window:
             Level = problem_level.text
             Pass = problem_pass2.size['width'] / problem_pass1.size['width']
 
-            Number = Number.replace('/', 'or').replace('\\', 'or')
-            Name = Name.replace('/', 'or').replace('\\', 'or')
-            Label = Label.replace('/', 'or').replace('\\', 'or')
-            Level = Level.replace('/', 'or').replace('\\', 'or')
+            Number = Number.replace('/', 'or').replace('\\', 'or').replace("'", 'or').replace('"', 'or')
+            Name = Name.replace('/', 'or').replace('\\', 'or').replace("'", 'or').replace('"', 'or')
+            Label = Label.replace('/', 'or').replace('\\', 'or').replace("'", 'or').replace('"', 'or')
+            Level = Level.replace('/', 'or').replace('\\', 'or').replace("'", 'or').replace('"', 'or')
 
             self.arr.append(problem_name.get_attribute('href'))
-            # self.arr.append((Number, Name, Label, Level, Pass))
+            self.Problem_object.append((Number, Name, Label, Level, Pass))
             self.tree.insert('', 'end', values=(Number, Name, Label, Level, Pass))
 
         self.label1.config(text='保存中，请稍后...', background='Light Blue')
-        
 
-        for problem_url in self.arr:
+
+        for problem_url,object in zip(self.arr,self.Problem_object):
 
             # 获取题目并保存为markdown格式
             self.driver.get(str(problem_url))
@@ -173,7 +174,7 @@ class window:
             if not os.path.exists(key):
                 os.makedirs(key)
 
-            with open(key + '/' + Number + ' ' + Name + '.md', "w", encoding='utf-8') as f:
+            with open(key + '/' + object[0] + ' ' + object[1] + '.md', "w", encoding='utf-8') as f:
                 f.write(markdownify(html))
 
             # 开始准备获取题解链接
@@ -188,7 +189,7 @@ class window:
             if adjust.text[0] != '0':
                 element = self.driver.find_element(By.XPATH,"/html/body/div/div[2]/main/div/section[2]/div/div[2]/div/div[1]/div/div[1]")
                 html = element.get_attribute('innerHTML')
-                with open(key + '/' + Number + ' ' + Name + '_题解' + '.md', "w", encoding='utf-8') as f:
+                with open(key + '/' + object[0] + ' ' + object[1] + '_题解' + '.md', "w", encoding='utf-8') as f:
                     f.write(markdownify(html))
 
         self.label1.destroy()
