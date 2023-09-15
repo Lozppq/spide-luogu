@@ -13,7 +13,7 @@ from tkinter import *
 from tkinter import ttk
 from tkinter.ttk import Treeview
 from tkinter import messagebox
-import multiprocessing
+from threading import Thread
 
 class window:
     def __init__(self):
@@ -24,7 +24,7 @@ class window:
         self.root.geometry('810x750')
         self.root.config(background='gray')
         menu = Menu(self.root)
-        menu.add_command(label='题量决定时间')
+        menu.add_command(label='菜单')
         self.root.config(menu=menu)
 
         #设置内容
@@ -50,7 +50,7 @@ class window:
         #设置查询框
         frame1 = Frame(self.root, borderwidth=5, relief=GROOVE)
         frame1.place(x=122, y=15, width=500, height=43)
-        self.label = Label(frame1, text="查询方式：")
+        self.label = Label(frame1, text="输入关键字：")
         self.label.grid(row=4, column=0)
         self.entry = Entry(frame1, width=37)
         self.entry.config(background='Light Blue')
@@ -74,18 +74,21 @@ class window:
     def search(self):
         self.key = self.entry.get()
         self.entry.delete(0, END)
-        time.sleep(5)
+        self.label1 = Label(self.root, text="正在查询，请稍后...")
+        self.label1.place(x = 680, y=25)
         if self.key == '':
             messagebox.showerror("系统提示", "未输入关键字！")
         else:
-            self.ground()
-            self.arr.sort(key=lambda x:(x[0],x[4]))
-            for i in self.arr:
-                self.tree.insert('','end', values=i)
+            spsider = Thread(target=self.ground)
+            spsider.start()
+
+            # self.arr.sort(key=lambda x:(x[0],x[4]))
+            # for i in self.arr:
+            #     self.tree.insert('','end', values=i)
 
     def ground(self):
         options = webdriver.ChromeOptions()
-        # options.add_argument("--headless")
+        options.add_argument("--headless")
         options.add_argument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36")
         # 创建 Chrome WebDriver 对象
         self.driver = webdriver.Chrome(options=options)
@@ -111,19 +114,24 @@ class window:
         key = self.key + self.var.get()
         search_box.send_keys(key)
         search_button.click()
+        time.sleep(2)
         self.driver.implicitly_wait(10)
 
         # 获取和关键字有关的题目列表
         problems_list = self.driver.find_element(By.XPATH, "/html/body/div/div[2]/main/div/div/div/div[1]/div[2]")
         problems_row = problems_list.find_elements(By.CLASS_NAME, "row")
         i = 0
+
+        #保存题目链接列表
         self.arr = []
+        List_key_url = self.driver.current_url
         # 对题目进行保存
         for problem_row in problems_row:
             if i > int(self.var1.get()):
                 break
             i += 1
-            self.driver.implicitly_wait(10)
+            wait = WebDriverWait(self.driver, 10)
+            wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/div/div[2]/main/div/div/div/div[1]/div[2]")))
             problem_number = problem_row.find_elements(By.TAG_NAME, "span")[1]
             problem_name = problem_row.find_element(By.XPATH, "./div[1]/a")
             problem_label = problem_row.find_element(By.XPATH, "./div[2]")
@@ -138,16 +146,21 @@ class window:
             Level = problem_level.text
             Pass = problem_pass2.size['width'] / problem_pass1.size['width']
 
-            self.arr.append((Number, Name, Label, Level, Pass))
             Number = Number.replace('/', 'or').replace('\\', 'or')
             Name = Name.replace('/', 'or').replace('\\', 'or')
             Label = Label.replace('/', 'or').replace('\\', 'or')
             Level = Level.replace('/', 'or').replace('\\', 'or')
 
+            self.arr.append(problem_name.get_attribute('href'))
+            # self.arr.append((Number, Name, Label, Level, Pass))
+            self.tree.insert('', 'end', values=(Number, Name, Label, Level, Pass))
 
+        self.label1.config(text='保存中，请稍后...', background='Light Blue')
+        
+
+        for problem_url in self.arr:
 
             # 获取题目并保存为markdown格式
-            problem_url = problem_name.get_attribute('href')
             self.driver.get(str(problem_url))
             time.sleep(random.randint(1,4))
             self.driver.implicitly_wait(10)
@@ -164,9 +177,7 @@ class window:
                 f.write(markdownify(html))
 
             # 开始准备获取题解链接
-            url = self.driver.find_element(By.XPATH,
-                                           "/html/body/div/div[2]/main/div/section[1]/div[1]/a[2]").get_attribute(
-                'href')
+            url = self.driver.find_element(By.XPATH,"/html/body/div/div[2]/main/div/section[1]/div[1]/a[2]").get_attribute('href')
             self.driver.get(url)
             time.sleep(random.randint(1, 4))
             self.driver.implicitly_wait(10)
@@ -180,11 +191,7 @@ class window:
                 with open(key + '/' + Number + ' ' + Name + '_题解' + '.md', "w", encoding='utf-8') as f:
                     f.write(markdownify(html))
 
-            self.driver.back()
-            time.sleep(random.randint(1,3))
-            self.driver.back()
-
-
+        self.label1.destroy()
         self.driver.quit()
 
 
