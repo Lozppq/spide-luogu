@@ -24,7 +24,7 @@ class window:
         self.root.geometry('810x750')
         self.root.config(background='gray')
         menu = Menu(self.root)
-        menu.add_command(label='菜单')
+        menu.add_command(label='保存题目需要时间，稍安勿躁~')
         self.root.config(menu=menu)
 
         #设置内容
