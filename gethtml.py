@@ -14,6 +14,7 @@ from tkinter import ttk
 from tkinter.ttk import Treeview
 from tkinter import messagebox
 from threading import Thread
+from selenium.webdriver.support.ui import Select
 
 class window:
     def __init__(self):
@@ -49,7 +50,7 @@ class window:
 
         #设置查询框
         frame1 = Frame(self.root, borderwidth=5, relief=GROOVE)
-        frame1.place(x=122, y=15, width=500, height=43)
+        frame1.place(x=60, y=15, width=580, height=43)
         self.label = Label(frame1, text="输入关键字：")
         self.label.grid(row=4, column=0)
         self.entry = Entry(frame1, width=37)
@@ -58,9 +59,10 @@ class window:
         self.button = Button(frame1, text="查询", anchor='center',command=self.search)
         self.button.grid(row=4, column=4)
         self.var = StringVar()
-        self.var.set('入门')
-        self.m = ['入门', '普及', '提高', '省选', 'NOI', 'CTSC']
-        self.menu = ttk.OptionMenu(frame1, self.var, '入门', *self.m)
+        self.var.set('')
+        self.m = ['暂无评定','入门', '普及-', '普及/提高-', '普及+/提高', '提高+/省选-', '省选/NOI-', 'NOI/NOI+/CTSC']
+        self.z = {'暂无评定': 1,'入门': 2, '普及-': 3, '普及/提高-': 4, '普及+/提高': 5, '提高+/省选-': 6, '省选/NOI-': 7, 'NOI/NOI+/CTSC': 8}
+        self.menu = ttk.OptionMenu(frame1, self.var, '', *self.m)
         self.menu.grid(row=4, column=2)
         self.var1 = StringVar()
         self.var1.set('10')
@@ -88,7 +90,7 @@ class window:
 
     def ground(self):
         options = webdriver.ChromeOptions()
-        options.add_argument("--headless")
+        # options.add_argument("--headless")
         options.add_argument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36")
         # 创建 Chrome WebDriver 对象
         self.driver = webdriver.Chrome(options=options)
@@ -111,8 +113,14 @@ class window:
         self.driver.get(list_url)
         search_box = self.driver.find_element(By.CSS_SELECTOR,"#app > div.main-container > main > div > section > div > section:nth-child(2) > div > div.refined-input.input-wrap.block-item.search-text.frame > input")
         search_button = self.driver.find_element(By.CSS_SELECTOR,"#app > div.main-container > main > div > section > div > section:nth-child(2) > div > div.search-option.no-wrap")
-        key = self.key + self.var.get()
+        key = self.key
         search_box.send_keys(key)
+        self.driver.find_element(By.XPATH, "/html/body/div/div[2]/main/div/section/div/section[2]/div/div[1]/div[1]").click()
+        time.sleep(1)
+        ul = '/html/body/div[2]/ul/li[' + str(self.z[self.var.get()]) + ']'
+        self.driver.find_element(By.XPATH, ul).click()
+        time.sleep(1)
+        # 遍历选项并点击
         search_button.click()
         time.sleep(2)
         self.driver.implicitly_wait(10)
@@ -130,7 +138,6 @@ class window:
         for problem_row in problems_row:
             if i > int(self.var1.get()):
                 break
-            i += 1
             wait = WebDriverWait(self.driver, 10)
             wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/div/div[2]/main/div/div/div/div[1]/div[2]")))
             problem_number = problem_row.find_elements(By.TAG_NAME, "span")[1]
@@ -152,9 +159,11 @@ class window:
             Label = Label.replace('/', 'or').replace('\\', 'or').replace("'", 'or').replace('"', 'or')
             Level = Level.replace('/', 'or').replace('\\', 'or').replace("'", 'or').replace('"', 'or')
 
+
             self.arr.append(problem_name.get_attribute('href'))
             self.Problem_object.append((Number, Name, Label, Level, Pass))
             self.tree.insert('', 'end', values=(Number, Name, Label, Level, Pass))
+            i += 1
 
         self.label1.config(text='保存中，请稍后...', background='Light Blue')
 
@@ -197,3 +206,4 @@ class window:
 
 
 f = window()
+
